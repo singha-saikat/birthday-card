@@ -483,6 +483,7 @@
           out.style.display = "block";
           window.scrollTo(0, 0);
           if (!reduce) petals();
+          song();
         });
         var t = setInterval(tick, 1000);
         tick();
@@ -528,6 +529,77 @@
             if (Date.now() < end + 4000) requestAnimationFrame(f);
             else x.clearRect(0, 0, W, H);
           })();
+        }
+
+        // জন্মদিনের গান — Web Audio দিয়ে বাজানো "Happy Birthday" সুর
+        var MEL = [
+          ["G4", 0.5],
+          ["G4", 0.5],
+          ["A4", 1],
+          ["G4", 1],
+          ["C5", 1],
+          ["B4", 2],
+          ["G4", 0.5],
+          ["G4", 0.5],
+          ["A4", 1],
+          ["G4", 1],
+          ["D5", 1],
+          ["C5", 2],
+          ["G4", 0.5],
+          ["G4", 0.5],
+          ["G5", 1],
+          ["E5", 1],
+          ["C5", 1],
+          ["D5", 1],
+          ["C5", 2],
+          ["F5", 0.5],
+          ["F5", 0.5],
+          ["E5", 1],
+          ["C5", 1],
+          ["D5", 1],
+          ["C5", 3],
+        ];
+        var STEP = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+        function hz(name) {
+          var semi = STEP[name[0]] + (+name.slice(-1) + 1) * 12;
+          return 440 * Math.pow(2, (semi - 69) / 12);
+        }
+        function song() {
+          var AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return;
+          var ac = new AC(),
+            master = ac.createGain(),
+            beat = 0.55,
+            at = ac.currentTime + 0.15;
+          if (ac.state === "suspended") ac.resume();
+          master.gain.value = 0.18;
+          master.connect(ac.destination);
+          function note(f, t0, dur) {
+            var g = ac.createGain(),
+              o = ac.createOscillator(),
+              o2 = ac.createOscillator(),
+              g2 = ac.createGain();
+            g.gain.setValueAtTime(0.0001, t0);
+            g.gain.linearRampToValueAtTime(1, t0 + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur * 0.95);
+            g.connect(master);
+            o.type = "triangle";
+            o.frequency.value = f;
+            o.connect(g);
+            g2.gain.value = 0.22;
+            o2.type = "sine";
+            o2.frequency.value = f * 2;
+            o2.connect(g2).connect(g);
+            o.start(t0);
+            o.stop(t0 + dur);
+            o2.start(t0);
+            o2.stop(t0 + dur);
+          }
+          MEL.forEach(function (n) {
+            var d = n[1] * beat;
+            note(hz(n[0]), at, d);
+            at += d;
+          });
         }
       })();
     </script>
